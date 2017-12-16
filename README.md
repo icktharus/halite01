@@ -1,6 +1,6 @@
 # Using your starter kit
 
-All starter kits should contain a `run_game.sh` and `run_game.bash`, you can use these scripts to quickly run a game of halite. By default, this script runs the basic __Settler__ bot against itself.
+This starter kit contains a `run_game_macos.sh` and `run_game_linux.sh`, you can use these scripts to quickly run a game of halite. By default, this script runs the basic __Settler__ bot against itself.
 
 ## Bot submission guidelines
 
@@ -17,5 +17,14 @@ Before submitting a bot, make sure you adhere to our guidelines, or the upload o
 # Using Docker
 
 ```bash
-docker-compose run shell bash
+docker-compose run -v .:/root/halite shell bash
+```
+
+# To View Games
+```bash
+git clone git@github.com:fohristiwhirl/chlorine.git
+cd chlorine
+npm install
+npm install electron --save-dev --save-exact
+./node_modules/.bin/electron .
 ```
