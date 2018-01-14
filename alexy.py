@@ -24,6 +24,7 @@ class ScoredPlanet:
         return (max_dist - dist)/max_dist
 
 max_dist = 0
+
 while True:
     game_map = game.update_map()
     max_dist = math.sqrt(game_map.width ** 2 + game_map.height ** 2)
@@ -44,17 +45,24 @@ while True:
             continue
 
         for planet in sorted(planets, key=lambda planet: planet.score(ship)):
-            if planet.planet.is_owned():
+            if planet.planet.is_full():
                 continue
 
-            if ship.can_dock(planet.planet):
+            planet_is_mine = False
+            if planet.is_owned() and planet.all_docked_ships[0].owner == me.id:
+                planet_is_mine = True
+
+            if ! planet_is_mine:
+                # Attack?  Strategy should determine.
+                "hi"
+            elif ship.can_dock(planet.planet):
                 command_queue.append(ship.dock(planet.planet))
             else:
                 navigate_command = ship.navigate(
                     ship.closest_point_to(planet.planet),
                     game_map,
                     speed=int(hlt.constants.MAX_SPEED/2),
-                    ignore_ships=True)
+                    ignore_ships=False)
                 if navigate_command:
                     command_queue.append(navigate_command)
             break

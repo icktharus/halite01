@@ -162,7 +162,7 @@ class Planet(Entity):
         Parse a single planet given tokenized input from the game environment.
 
         :return: The planet ID, planet object, and unused tokens.
-        :rtype: (int, Planet, list[str])
+        :rtype: (int, Plane, tlist[str])
         """
         (plid, x, y, hp, r, docking, current, remaining,
          owned, owner, num_docked_ships, *remainder) = tokens
@@ -217,6 +217,8 @@ class Ship(Entity):
     :ivar owner: The player ID of the owner, if any. If None, Entity is not owned.
     """
 
+    unassigned_ships = []
+
     class DockingStatus(Enum):
         UNDOCKED = 0
         DOCKING = 1
@@ -235,6 +237,19 @@ class Ship(Entity):
         self.planet = planet if (docking_status is not Ship.DockingStatus.UNDOCKED) else None
         self._docking_progress = progress
         self._weapon_cooldown = cooldown
+        self._task_group = None
+        Ship.unassigned_ships.append(self)
+
+    def task_group(self):
+        return self._task_group
+
+    def set_task_group(self, task_group):
+        if task_group == None:
+            Ship.unassigned_ships.append(self)
+        else:
+            Ship.unassigned_ships.delete(self)
+        self._task_group = task_group
+        return task_group
 
     def thrust(self, magnitude, angle):
         """
@@ -394,3 +409,6 @@ class Position(Entity):
 
     def _link(self, players, planets):
         raise NotImplementedError("Position should not have link attributes.")
+
+    def str(self):
+        return "(%f,%f)" % (self.x, self.y)

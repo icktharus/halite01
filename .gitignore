@@ -1,4 +1,6 @@
 /*.log
 /replay*.hlt
 *~
-*.pyc
+*.py[cod]
+__pycache__/
+
