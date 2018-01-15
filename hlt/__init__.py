@@ -9,4 +9,5 @@ build up a list of commands and send them with send_command_queue().
 from . import collision, constants, entity, game_map, networking, task_group, strategy
 
 from .networking import Game
-from .strategy import Strategy
+from .strategy import *
+from .strategies import *

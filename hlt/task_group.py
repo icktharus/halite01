@@ -20,8 +20,8 @@ class TaskGroup:
     #
     # Returns new TaskGroup
     def __init__(self, ships=[]):
-        max_id     += 1
-        self.id    = max_id
+        TaskGroup.max_id  += 1
+        self.id            = TaskGroup.max_id
 
         self.ships = []
         for ship in ships:
@@ -29,8 +29,8 @@ class TaskGroup:
 
         self.targets = []
 
-        task_groups.append(self)
-        return self
+        TaskGroup.task_groups.append(self)
+        return
 
     # Public: Adds a ship to this task group.
     #
@@ -49,7 +49,7 @@ class TaskGroup:
     def __del__(self):
         for ship in self.ships:
             ship.set_task_group(None)
-        task_groups.remove(self)
+        TaskGroup.task_groups.remove(self)
         return self.ships
 
     # Public: Assigns a target for this task group.

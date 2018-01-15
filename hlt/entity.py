@@ -247,7 +247,7 @@ class Ship(Entity):
         if task_group == None:
             Ship.unassigned_ships.append(self)
         else:
-            Ship.unassigned_ships.delete(self)
+            Ship.unassigned_ships.remove(self)
         self._task_group = task_group
         return task_group
 
