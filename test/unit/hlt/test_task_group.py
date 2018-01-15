@@ -74,7 +74,7 @@ class TestTaskGroup(unittest.TestCase):
                          { self.ship().id : self.ship() })
 
         self.subject().add_ship(self.ship())
-        self.assertEqual(self.ship().id, self.subject().ships[0].id)
+        self.assertEqual(self.ship(), self.subject().ships[self.ship().id])
         self.assertEqual(self.subject().id, self.ship().task_group().id)
         self.assertEqual(hlt.entity.Ship.unassigned_ships[self.player().id], {})
         pass
