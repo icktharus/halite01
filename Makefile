@@ -4,10 +4,11 @@ PYTHON   = python3
 TESTDIR  = test
 TEST     = ${PYTHON} -m unittest discover
 
-cleanup:
-	@rm *.log *.hlt || true
+build:
+	@$(MAKE) run_game
+	@$(MAKE) chlorine:*.hlt
 
-run_game: cleanup
+run_game: clean
 	@./run_game.sh
 
 run_chlorine:
@@ -16,8 +17,10 @@ run_chlorine:
 chlorine\:%:
 	@${CHLORINE} -o $* &
 
+clean:
+	@rm *.log *.hlt || true
+
 test:
 	@${TEST} --start ${TESTDIR}
 
-.PHONY: test
-
+.PHONY: build run_game run_chlorine clean test
