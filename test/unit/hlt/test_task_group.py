@@ -2,12 +2,17 @@ import hlt
 import math
 import unittest
 
-class TaskGroupTest(unittest.TestCase):
+class TestTaskGroup(unittest.TestCase):
 
     def setUp(self):
-        self._player = None
-        self._ship = None
+        self._player  = None
+        self._ship    = None
+        self._planet  = None
         self._subject = None
+        return
+
+    def tearDown(self):
+        hlt.task_group.TaskGroup.delete_all()
         return
 
     def player(self):
@@ -35,18 +40,67 @@ class TaskGroupTest(unittest.TestCase):
                                          cooldown)
         return self._ship
 
+    def planet(self):
+        if self._planet == None:
+            planet_id     = 60
+            planet_x      = 100
+            planet_y      = 100
+            planet_health = 100
+            planet_radius = 5
+            docking_spots = 10
+            current       = 0
+            remaining     = 10
+            owned         = False
+            owner         = None
+            docked_ships  = []
+            self._planet = hlt.entity.Planet(planet_id, planet_x, planet_y,
+                                             planet_health, planet_radius,
+                                             docking_spots, current, remaining,
+                                             owned, owner, docked_ships)
+        return self._planet
+
     def subject(self):
         if self._subject == None:
             self._subject = hlt.task_group.TaskGroup()
         return self._subject
 
     def test_add_ship(self):
-        self.assertEqual(hlt.entity.Ship.unassigned_ships, [self.ship()])
+        self.assertEqual(hlt.entity.Ship.unassigned_ships,
+                         { self.ship().id : self.ship() })
 
         self.subject().add_ship(self.ship())
         self.assertEqual(self.ship().id, self.subject().ships[0].id)
         self.assertEqual(self.subject().id, self.ship().task_group().id)
-        self.assertEqual(hlt.entity.Ship.unassigned_ships, [])
+        self.assertEqual(hlt.entity.Ship.unassigned_ships, {})
+        pass
+
+    def test_delete(self):
+        task_group = self.subject()
+        task_group.add_ship(self.ship())
+
+        hlt.task_group.TaskGroup.delete(task_group)
+
+        self.assertEqual(hlt.entity.Ship.unassigned_ships,
+                         { self.ship().id : self.ship() })
+        self.assertEqual(hlt.task_group.TaskGroup.task_groups, {})
+        pass
+
+    def test_delete_all(self):
+        task_group = self.subject()
+
+        self.assertEqual(hlt.task_group.TaskGroup.task_groups,
+                         { task_group.id : task_group })
+        hlt.task_group.TaskGroup.delete_all()
+        self.assertEqual(hlt.task_group.TaskGroup.task_groups, {})
+        pass
+
+    def test_target(self):
+        task_group = self.subject()
+        task_group.target(self.planet())
+
+        self.assertEqual(task_group.targets, [self.planet()])
+        task_group.clear_targets()
+        self.assertEqual(task_group.targets, [])
         pass
 
 if __name__ == '__main__':

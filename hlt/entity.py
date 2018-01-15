@@ -217,7 +217,7 @@ class Ship(Entity):
     :ivar owner: The player ID of the owner, if any. If None, Entity is not owned.
     """
 
-    unassigned_ships = []
+    unassigned_ships = {}
 
     class DockingStatus(Enum):
         UNDOCKED = 0
@@ -238,16 +238,23 @@ class Ship(Entity):
         self._docking_progress = progress
         self._weapon_cooldown = cooldown
         self._task_group = None
-        Ship.unassigned_ships.append(self)
+        # FIXME: Ships are not persisted across turns.
+        Ship.unassigned_ships[self.id] = self
+        logging.info("ADDING Ship(%d) to unassigned_ships." % self.id)
+        return
 
     def task_group(self):
         return self._task_group
 
     def set_task_group(self, task_group):
+        if task_group != None:
+            logging.info("ADDING Ship(%d) TO TaskGroup(%d)" % (self.id, task_group.id))
+
+        logging.info("(unassigned_ships: %s)" % ",".join(map(lambda x: str(x), Ship.unassigned_ships.keys())))
         if task_group == None:
-            Ship.unassigned_ships.append(self)
+            Ship.unassigned_ships[self.id] = self
         else:
-            Ship.unassigned_ships.remove(self)
+            del Ship.unassigned_ships[self.id]
         self._task_group = task_group
         return task_group
 

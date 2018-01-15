@@ -1,3 +1,4 @@
+import logging
 import math
 
 class TaskGroup:
@@ -12,7 +13,7 @@ class TaskGroup:
     """
 
     max_id = 0
-    task_groups = []
+    task_groups = {}
 
     # Public: Creates a new TaskGroup.
     #
@@ -21,7 +22,7 @@ class TaskGroup:
     # Returns new TaskGroup
     def __init__(self, ships=[]):
         TaskGroup.max_id  += 1
-        self.id            = TaskGroup.max_id
+        self.id = TaskGroup.max_id
 
         self.ships = []
         for ship in ships:
@@ -29,7 +30,7 @@ class TaskGroup:
 
         self.targets = []
 
-        TaskGroup.task_groups.append(self)
+        TaskGroup.task_groups[self.id] = self
         return
 
     # Public: Adds a ship to this task group.
@@ -46,11 +47,22 @@ class TaskGroup:
     # duties.
     #
     # Returns ships.
-    def __del__(self):
-        for ship in self.ships:
+    @classmethod
+    def delete(cls, task_group):
+        logging.info("* TaskGroup(%d) being deleted." % task_group.id)
+        for ship in task_group.ships:
             ship.set_task_group(None)
-        TaskGroup.task_groups.remove(self)
-        return self.ships
+        del TaskGroup.task_groups[task_group.id]
+        return task_group.ships
+
+    # Public: Destroys all task groups.  Mostly for testing.
+    #
+    # Returns nothing.
+    @classmethod
+    def delete_all(cls):
+        for task_group in list(TaskGroup.task_groups.values()):
+            cls.delete(task_group)
+        return
 
     # Public: Assigns a target for this task group.
     #
