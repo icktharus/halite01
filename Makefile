@@ -1,9 +1,11 @@
 ELECTRON=./chlorine/node_modules/.bin/electron
 CHLORINE=${ELECTRON} ./chlorine
 
-run_game:
+cleanup:
 	@rm *.log
 	@rm *.hlt
+
+run_game: cleanup
 	@./run_game.sh
 
 run_chlorine:
