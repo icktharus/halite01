@@ -24,8 +24,6 @@ class TaskGroup:
         TaskGroup.max_id  += 1
         self.id = TaskGroup.max_id
 
-        logging.info("* creating TaskGroup(%d)" % self.id)
-
         self.ships = {}
         for ship in ships:
             self.add_ship(ship)
@@ -41,7 +39,6 @@ class TaskGroup:
     #
     # Returns nothing
     def add_ship(self, ship):
-        logging.info("* ADDING Ship(%d) TO TaskGroup(%d)" % (ship.id, self.id))
         ship.set_task_group(self)
         self.ships[ship.id] = ship
         return ship
@@ -52,7 +49,6 @@ class TaskGroup:
     # Returns ships.
     @classmethod
     def delete(cls, task_group):
-        logging.info("* TaskGroup(%d) being deleted." % task_group.id)
         for ship in task_group.ships.values():
             ship.set_task_group(None)
         del TaskGroup.task_groups[task_group.id]
@@ -63,7 +59,6 @@ class TaskGroup:
     # Returns nothing.
     @classmethod
     def delete_all(cls):
-        logging.info("* ALL TaskGroups BEING DELETED.")
         for task_group in list(TaskGroup.task_groups.values()):
             cls.delete(task_group)
         return

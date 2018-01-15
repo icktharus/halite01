@@ -58,6 +58,5 @@ class BaseStrategy:
         if len(task_group.ships) > 0:
             return True
         else:
-            logging.info("* TaskGroup(%d) can't continue because out of ships." % task_group.id)
             return False
 

@@ -23,7 +23,6 @@ class StrategyFactory:
         last_strategy = None
         for strategy_entry in StrategyFactory.STRATEGIES:
             strategy_class, percent = strategy_entry
-            logging.info("RAND: %d, CURRENT: %d" % (rand_num, current))
             if current > rand_num:
                 return last_strategy(game)
             current += percent
