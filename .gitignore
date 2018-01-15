@@ -3,4 +3,4 @@
 *~
 *.py[cod]
 __pycache__/
-
+/saved_games/
