@@ -29,7 +29,7 @@ class SettlerStrategy(BaseStrategy):
                 navigate = ship.navigate(
                     point,
                     game_map,
-                    speed = int(hlt.constants.MAX_SPEED/2),
+                    speed = int(hlt.constants.MAX_SPEED),
                     ignore_ships=False)
                 if navigate:
                     command_queue.append(navigate)
