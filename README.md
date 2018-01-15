@@ -20,11 +20,24 @@ Before submitting a bot, make sure you adhere to our guidelines, or the upload o
 docker-compose run -v .:/root/halite shell bash
 ```
 
-# To View Games
+# Running Games
+
+## To Run Games
 ```bash
-git clone git@github.com:fohristiwhirl/chlorine.git
-cd chlorine
-npm install
-npm install electron --save-dev --save-exact
-./node_modules/.bin/electron .
+make run_game
+```
+
+## To View Games
+```bash
+make run_chlorine
+```
+
+## To View Individual Games
+```bash
+make chlorine:_replay_file_
+```
+
+## To Run and View Games
+```bash
+make
 ```
