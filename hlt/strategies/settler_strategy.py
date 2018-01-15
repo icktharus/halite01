@@ -6,6 +6,7 @@ class SettlerStrategy(BaseStrategy):
 
     def create_task_group(self, game_map, ships):
         ship = ships.pop()
+
         logging.info("--> creating new task group with ship %d", ship.id)
         task_group = hlt.task_group.TaskGroup([ship])
         for planet in game_map.all_planets():
@@ -23,11 +24,13 @@ class SettlerStrategy(BaseStrategy):
             if ship.can_dock(planet):
                 command_queue.append(ship.dock(planet))
             else:
+                point = ship.closest_point_to(planet)
+                logging.info("* Ship(%d) navigating to Planet(%d): %s" % (ship.id, planet.id, str(point)))
                 navigate = ship.navigate(
-                    ship.closest_point_to(planet),
+                    point,
                     game_map,
-                    speed = int(constants.MAX_SPEED/2),
-                    ignore_ships=False)
+                    speed = int(hlt.constants.MAX_SPEED/2),
+                    ignore_ships=True)
                 if navigate:
                     command_queue.append(navigate)
             break

@@ -24,6 +24,8 @@ class TaskGroup:
         TaskGroup.max_id  += 1
         self.id = TaskGroup.max_id
 
+        logging.info("* creating TaskGroup(%d)" % self.id)
+
         self.ships = []
         for ship in ships:
             self.add_ship(ship)
@@ -39,6 +41,7 @@ class TaskGroup:
     #
     # Returns nothing
     def add_ship(self, ship):
+        logging.info("* ADDING Ship(%d) TO TaskGroup(%d)" % (ship.id, self.id))
         ship.set_task_group(self)
         self.ships.append(ship)
         return ship

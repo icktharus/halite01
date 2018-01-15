@@ -38,6 +38,10 @@ class TestTaskGroup(unittest.TestCase):
                                          ship_health, ship_vel_x, ship_vel_y,
                                          ship_status, planet, progress,
                                          cooldown)
+
+            players_dict = { self.player().id : self.player() }
+            planets_dict = { self.planet().id : self.planet() }
+            self._ship._link(players_dict, planets_dict)
         return self._ship
 
     def planet(self):
@@ -65,13 +69,14 @@ class TestTaskGroup(unittest.TestCase):
         return self._subject
 
     def test_add_ship(self):
-        self.assertEqual(hlt.entity.Ship.unassigned_ships,
+        self.ship()
+        self.assertEqual(hlt.entity.Ship.unassigned_ships[self.player().id],
                          { self.ship().id : self.ship() })
 
         self.subject().add_ship(self.ship())
         self.assertEqual(self.ship().id, self.subject().ships[0].id)
         self.assertEqual(self.subject().id, self.ship().task_group().id)
-        self.assertEqual(hlt.entity.Ship.unassigned_ships, {})
+        self.assertEqual(hlt.entity.Ship.unassigned_ships[self.player().id], {})
         pass
 
     def test_delete(self):
@@ -80,7 +85,7 @@ class TestTaskGroup(unittest.TestCase):
 
         hlt.task_group.TaskGroup.delete(task_group)
 
-        self.assertEqual(hlt.entity.Ship.unassigned_ships,
+        self.assertEqual(hlt.entity.Ship.unassigned_ships[self.player().id],
                          { self.ship().id : self.ship() })
         self.assertEqual(hlt.task_group.TaskGroup.task_groups, {})
         pass

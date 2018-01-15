@@ -238,8 +238,10 @@ class Ship(Entity):
         self._docking_progress = progress
         self._weapon_cooldown = cooldown
         self._task_group = None
-        # FIXME: Ships are not persisted across turns.
-        Ship.unassigned_ships[self.id] = self
+        # FIXME: This list includes enemy ships too.
+        if not player_id in Ship.unassigned_ships:
+            Ship.unassigned_ships[player_id] = {}
+        Ship.unassigned_ships[player_id][self.id] = self
         logging.info("ADDING Ship(%d) to unassigned_ships." % self.id)
         return
 
@@ -250,11 +252,11 @@ class Ship(Entity):
         if task_group != None:
             logging.info("ADDING Ship(%d) TO TaskGroup(%d)" % (self.id, task_group.id))
 
-        logging.info("(unassigned_ships: %s)" % ",".join(map(lambda x: str(x), Ship.unassigned_ships.keys())))
+        logging.info("(unassigned_ships.keys: %s, owner: %d)" % (",".join(map(lambda x: str(x), Ship.unassigned_ships.keys())), self.owner.id))
         if task_group == None:
-            Ship.unassigned_ships[self.id] = self
-        else:
-            del Ship.unassigned_ships[self.id]
+            Ship.unassigned_ships[self.owner.id][self.id] = self
+        elif self.id in Ship.unassigned_ships[self.owner.id]:
+            del Ship.unassigned_ships[self.owner.id][self.id]
         self._task_group = task_group
         return task_group
 
