@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+import logging
 
 class BaseStrategy:
     __metaclass__ = ABCMeta
@@ -54,4 +55,9 @@ class BaseStrategy:
     # Returns true if this task_group's task is completeable.
     @abstractmethod
     def can_task_group_continue(self, task_group, game_map):
-        return len(task_group.ships) > 0
+        if len(task_group.ships) > 0:
+            return True
+        else:
+            logging.info("* TaskGroup(%d) can't continue because out of ships." % task_group.id)
+            return False
+

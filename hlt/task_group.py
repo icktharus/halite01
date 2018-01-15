@@ -26,7 +26,7 @@ class TaskGroup:
 
         logging.info("* creating TaskGroup(%d)" % self.id)
 
-        self.ships = []
+        self.ships = {}
         for ship in ships:
             self.add_ship(ship)
 
@@ -43,7 +43,7 @@ class TaskGroup:
     def add_ship(self, ship):
         logging.info("* ADDING Ship(%d) TO TaskGroup(%d)" % (ship.id, self.id))
         ship.set_task_group(self)
-        self.ships.append(ship)
+        self.ships[ship.id] = ship
         return ship
 
     # Public: Destroys this task group, freeing up the ships for other
@@ -53,16 +53,17 @@ class TaskGroup:
     @classmethod
     def delete(cls, task_group):
         logging.info("* TaskGroup(%d) being deleted." % task_group.id)
-        for ship in task_group.ships:
+        for ship in task_group.ships.values():
             ship.set_task_group(None)
         del TaskGroup.task_groups[task_group.id]
-        return task_group.ships
+        return task_group.ships.values()
 
     # Public: Destroys all task groups.  Mostly for testing.
     #
     # Returns nothing.
     @classmethod
     def delete_all(cls):
+        logging.info("* ALL TaskGroups BEING DELETED.")
         for task_group in list(TaskGroup.task_groups.values()):
             cls.delete(task_group)
         return

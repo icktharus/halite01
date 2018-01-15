@@ -15,6 +15,7 @@ run_chlorine:
 	@${CHLORINE} &
 
 chlorine\:%:
+	@echo "Displaying game..."
 	@${CHLORINE} -o $* &
 
 clean:
