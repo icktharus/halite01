@@ -132,7 +132,7 @@ class EdgeSettlerStrategy(BaseStrategy):
 
         else:
             point = leader.closest_point_to(planet)
-            for ship in ships:
+            for ship in task_group.available_ships():
                 if ship.can_dock(planet):
                     command_queue.append(ship.dock(planet))
                     self.docked_ships[ ship.id ] = True

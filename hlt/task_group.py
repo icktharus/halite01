@@ -1,3 +1,4 @@
+import hlt
 import logging
 import math
 
@@ -52,7 +53,7 @@ class TaskGroup:
         else:
             sorted_ships = sorted(self.all_ships(), key=lambda s: s.id)
             self._leader = sorted_ships[0]
-            self.leader_id = leader.id
+            self.leader_id = self._leader.id
             self._followers = sorted_ships[1:]
         return
 
@@ -77,6 +78,7 @@ class TaskGroup:
     # Public: Return undocked ships.
     def available_ships(self):
         if self._available_ships == None:
+            self._available_ships = {}
             for ship in self.all_ships():
                 if ship.docking_status != hlt.entity.Ship.DockingStatus.DOCKED:
                     self._available_ships[ship.id] = ship
@@ -102,10 +104,10 @@ class TaskGroup:
     # Returns ships.
     @classmethod
     def delete(cls, task_group):
-        for ship in self.all_ships():
+        for ship in task_group.all_ships():
             ship.set_task_group(None)
         del TaskGroup.task_groups[task_group.id]
-        return self.all_ships()
+        return task_group.all_ships()
 
     # Public: Destroys all task groups.  Mostly for testing.
     #
