@@ -34,6 +34,9 @@ class EdgeSettlerStrategy(BaseStrategy):
         self.edge_planets = edge_planets
         self.central_planets = central_planets
 
+        self.planet_task_groups = {}
+        self.docked_ships = {}
+
         logging.info("* %d edge planets, %d central planets" % (len(edge_planets), len(central_planets)))
 
         return
@@ -77,10 +80,23 @@ class EdgeSettlerStrategy(BaseStrategy):
         if len(group_ships) < 3:
             return None
 
-        task_group = hlt.task_group.TaskGroup(group_ships)
         planet = self.next_planet(game_map, group_ships)
 
-        logging.info("* creating task group %d: %d ships, target: %d" % (task_group.id, len(group_ships), (0 if planet == None else planet.id)))
+        task_group = None
+        if planet.id in self.planet_task_groups:
+            task_group_id = self.planet_task_groups[planet.id]
+            task_group = hlt.task_group.TaskGroup.task_groups[task_group_id]
+
+            for ship in group_ships:
+                task_group.add_ship(ship)
+
+            logging.info("* using existing TaskGroup(%d): %d ships, target: %d" % (task_group_id, len(task_group.ships), (0 if planet == None else planet.id)))
+
+        else:
+            task_group = hlt.task_group.TaskGroup(group_ships)
+            self.planet_task_groups[planet.id] = task_group.id
+
+            logging.info("* creating task group %d: %d ships, target: %d" % (task_group.id, len(group_ships), (0 if planet == None else planet.id)))
 
         if planet != None:
             task_group.target(planet)
@@ -95,10 +111,7 @@ class EdgeSettlerStrategy(BaseStrategy):
 
         planet = task_group.targets[0]
 
-        # Arbitrarily pick a ship as the leader.
-        sorted_ships = sorted(task_group.ships.values(), key=lambda s: s.id)
-        leader = sorted_ships[0]
-        followers = sorted_ships[1:]
+        leader = task_group.leader()
 
         if planet.owner != None and planet.owner != game_map.get_me():
             closest = None
@@ -110,35 +123,25 @@ class EdgeSettlerStrategy(BaseStrategy):
                     closest_dist = dist
 
             point = leader.closest_point_to(closest)
-            nav = leader.navigate(
-                point, game_map, speed=int(hlt.constants.MAX_SPEED),
-                ignore_ships=False)
-            if nav:
-                command_queue.append(nav)
-            command_queue.extend(ShipUtils.follow(followers, leader, game_map))
+            for ship in task_group.available_ships():
+                nav = ship.navigate(
+                    point, game_map, speed=int(hlt.constants.MAX_SPEED),
+                    ignore_ships=False)
+                if nav:
+                    command_queue.append(nav)
 
-        elif leader.can_dock(planet):
-            command_queue.append(leader.dock(planet))
-            for follower in followers:
-                if follower.can_dock(planet):
-                    command_queue.append(follower.dock(planet))
+        else:
+            point = leader.closest_point_to(planet)
+            for ship in ships:
+                if ship.can_dock(planet):
+                    command_queue.append(ship.dock(planet))
+                    self.docked_ships[ ship.id ] = True
                 else:
-                    point = follower.closest_point_to(planet)
-                    navigate = follower.navigate(
+                    navigate = ship.navigate(
                         point, game_map, speed=int(hlt.constants.MAX_SPEED),
                         ignore_ships=False)
                     if navigate:
                         command_queue.append(navigate)
-        else:
-            point = leader.closest_point_to(planet)
-            navigate = leader.navigate(
-                point,
-                game_map,
-                speed=int(hlt.constants.MAX_SPEED),
-                ignore_ships=False)
-            if navigate:
-                command_queue.append(navigate)
-            command_queue.extend(ShipUtils.follow(followers, leader, game_map))
 
         return command_queue
 
