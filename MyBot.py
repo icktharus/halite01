@@ -46,7 +46,6 @@ while True:
     # 3. Get commands for all TaskGroup ships.
     command_queue = []
     for task_group in list(hlt.task_group.TaskGroup.task_groups.values()):
-        logging.info("***** RUNNING COMMANDS FOR TaskGroup(%d) *****" % task_group.id)
         command_queue += strategy.get_commands(game_map, task_group)
 
     # 4. Send all commands to the game.

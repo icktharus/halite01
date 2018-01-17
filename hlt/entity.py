@@ -245,7 +245,7 @@ class Ship(Entity):
         if not player_id in Ship.unassigned_ships:
             Ship.unassigned_ships[player_id] = {}
         Ship.unassigned_ships[player_id][self.id] = self
-        logging.info("ADDING Ship(%d) to unassigned_ships." % self.id)
+        # logging.info("ADDING Ship(%d) to unassigned_ships." % self.id)
         if self.id in Ship.ship_task_groups:
             self.set_task_group(Ship.ship_task_groups[self.id])
         return
@@ -257,12 +257,12 @@ class Ship(Entity):
         return self._task_group
 
     def set_task_group(self, task_group):
-        if task_group != None:
-            logging.info("ADDING Ship(%d) TO TaskGroup(%d)" % (self.id, task_group.id))
+        # if task_group != None:
+        #     logging.info("ADDING Ship(%d) TO TaskGroup(%d)" % (self.id, task_group.id))
 
         owner_id = self.owner if isinstance(self.owner, int) else self.owner.id
 
-        logging.info("(unassigned_ships.keys: %s, owner: %d)" % (",".join(map(lambda x: str(x), Ship.unassigned_ships.keys())), owner_id))
+        # logging.info("(unassigned_ships.keys: %s, owner: %d)" % (",".join(map(lambda x: str(x), Ship.unassigned_ships.keys())), owner_id))
 
         if task_group == None:
             Ship.unassigned_ships[owner_id][self.id] = self

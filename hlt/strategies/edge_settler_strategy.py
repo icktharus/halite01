@@ -77,13 +77,11 @@ class EdgeSettlerStrategy(BaseStrategy):
         while len(ships) > 0:
             group_ships.append(ships.pop())
 
-        if len(group_ships) < 3:
-            return None
-
         planet = self.next_planet(game_map, group_ships)
 
         task_group = None
-        if planet.id in self.planet_task_groups:
+        if (planet.id in self.planet_task_groups and
+            self.planet_task_groups[planet.id] in hlt.task_group.TaskGroup.task_groups):
             task_group_id = self.planet_task_groups[planet.id]
             task_group = hlt.task_group.TaskGroup.task_groups[task_group_id]
 
@@ -132,10 +130,13 @@ class EdgeSettlerStrategy(BaseStrategy):
 
         else:
             point = leader.closest_point_to(planet)
-            for ship in task_group.available_ships():
-                if ship.can_dock(planet):
-                    command_queue.append(ship.dock(planet))
+            for ship in task_group.all_ships():
+                if ship.id in self.docked_ships:
+                    continue
+                elif ship.docking_status == hlt.entity.Ship.DockingStatus.DOCKED:
                     self.docked_ships[ ship.id ] = True
+                elif ship.can_dock(planet):
+                    command_queue.append(ship.dock(planet))
                 else:
                     navigate = ship.navigate(
                         point, game_map, speed=int(hlt.constants.MAX_SPEED),
