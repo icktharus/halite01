@@ -11,7 +11,7 @@ class StrategyFactory:
     """
 
     STRATEGIES = [
-        [ hlt.strategies.SettlerStrategy, 100 ]
+        [ hlt.strategies.EdgeSettlerStrategy, 100 ]
         ]
 
     def __init__(self):
