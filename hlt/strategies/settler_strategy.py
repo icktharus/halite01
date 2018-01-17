@@ -18,6 +18,9 @@ class SettlerStrategy(BaseStrategy):
     def get_commands(self, game_map, task_group):
         command_queue = []
 
+        if len(task_group.targets) == 0:
+            return command_queue
+
         planet = task_group.targets[0]
         for ship in task_group.ships.values():
             if ship.can_dock(planet):
@@ -34,6 +37,8 @@ class SettlerStrategy(BaseStrategy):
         return command_queue
 
     def is_task_group_done(self, task_group):
+        if len(task_group.targets) == 0:
+            return True
         planet = task_group.targets[0]
         return True if planet.is_owned() else False
 
