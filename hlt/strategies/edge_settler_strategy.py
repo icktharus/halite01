@@ -3,6 +3,7 @@ import hlt
 import logging
 import math
 import numpy
+from .strategy_utils import *
 
 class EdgeSettlerStrategy(BaseStrategy):
 
@@ -14,9 +15,9 @@ class EdgeSettlerStrategy(BaseStrategy):
         map_width = game_map.width
         map_height = game_map.height
 
-        # An edge planet is any planet whose center is within 20% of
+        # An edge planet is any planet whose center is within 25% of
         # the min of width and height.
-        edge_dist = 0.20 * min(map_width, map_height)
+        edge_dist = 0.25 * min(map_width, map_height)
 
         edge_planets = {}
         central_planets = {}
@@ -68,16 +69,15 @@ class EdgeSettlerStrategy(BaseStrategy):
                 return closest_planet
         return None
 
-    # Create task groups of up to 3 ships.
     def create_task_group(self, game_map, ships):
         group_ships = []
-        for i in range(1,3):
-            if len(ships) == 0:
-                break
+        while len(ships) > 0:
             group_ships.append(ships.pop())
 
-        task_group = hlt.task_group.TaskGroup(group_ships)
+        if len(group_ships) < 3:
+            return None
 
+        task_group = hlt.task_group.TaskGroup(group_ships)
         planet = self.next_planet(game_map, group_ships)
 
         logging.info("* creating task group %d: %d ships, target: %d" % (task_group.id, len(group_ships), (0 if planet == None else planet.id)))
@@ -94,18 +94,52 @@ class EdgeSettlerStrategy(BaseStrategy):
             return command_queue
 
         planet = task_group.targets[0]
-        for ship in task_group.ships.values():
-            if ship.can_dock(planet):
-                command_queue.append(ship.dock(planet))
-            else:
-                point = ship.closest_point_to(planet)
-                navigate = ship.navigate(
-                    point,
-                    game_map,
-                    speed = int(hlt.constants.MAX_SPEED),
-                    ignore_ships=False)
-                if navigate:
-                    command_queue.append(navigate)
+
+        # Arbitrarily pick a ship as the leader.
+        sorted_ships = sorted(task_group.ships.values(), key=lambda s: s.id)
+        leader = sorted_ships[0]
+        followers = sorted_ships[1:]
+
+        if planet.owner != None and planet.owner != game_map.get_me():
+            closest = None
+            closest_dist = -1.0
+            for enemy in planet.all_docked_ships():
+                dist = leader.calculate_distance_between(enemy)
+                if closest == None or dist < closest_dist:
+                    closest = enemy
+                    closest_dist = dist
+
+            point = leader.closest_point_to(closest)
+            nav = leader.navigate(
+                point, game_map, speed=int(hlt.constants.MAX_SPEED),
+                ignore_ships=False)
+            if nav:
+                command_queue.append(nav)
+            command_queue.extend(ShipUtils.follow(followers, leader, game_map))
+
+        elif leader.can_dock(planet):
+            command_queue.append(leader.dock(planet))
+            for follower in followers:
+                if follower.can_dock(planet):
+                    command_queue.append(follower.dock(planet))
+                else:
+                    point = follower.closest_point_to(planet)
+                    navigate = follower.navigate(
+                        point, game_map, speed=int(hlt.constants.MAX_SPEED),
+                        ignore_ships=False)
+                    if navigate:
+                        command_queue.append(navigate)
+        else:
+            point = leader.closest_point_to(planet)
+            navigate = leader.navigate(
+                point,
+                game_map,
+                speed=int(hlt.constants.MAX_SPEED),
+                ignore_ships=False)
+            if navigate:
+                command_queue.append(navigate)
+            command_queue.extend(ShipUtils.follow(followers, leader, game_map))
+
         return command_queue
 
     def is_task_group_done(self, task_group):

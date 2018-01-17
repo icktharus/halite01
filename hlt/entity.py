@@ -231,6 +231,8 @@ class Ship(Entity):
         self.id = ship_id
         self.x = x
         self.y = y
+        self.vel_x = vel_x
+        self.vel_y = vel_y
         self.owner = player_id
         self.radius = constants.SHIP_RADIUS
         self.health = hp
@@ -247,6 +249,9 @@ class Ship(Entity):
         if self.id in Ship.ship_task_groups:
             self.set_task_group(Ship.ship_task_groups[self.id])
         return
+
+    def velocity(self):
+        return math.sqrt(self.vel_x ** 2 + self.vel_y ** 2)
 
     def task_group(self):
         return self._task_group
