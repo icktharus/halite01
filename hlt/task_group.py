@@ -1,3 +1,4 @@
+import hlt
 import logging
 import math
 
@@ -30,10 +31,64 @@ class TaskGroup:
 
         self.targets = []
 
+        self.leader_id = None
+        self._leader = None
+        self._followers = []
+
+        self._available_ships = None
+
         TaskGroup.task_groups[self.id] = self
         return
 
-    # Public: Adds a ship to this task group.
+    # Private: Pick a leader and set followers.
+    #
+    # Returns nothing.
+    def _set_up_leader(self):
+        if self.leader_id != None:
+            for ship in self.all_ships():
+                if ship.id == self.leader_id:
+                    self._leader = ship
+                else:
+                    self._followers.append(ship)
+        else:
+            sorted_ships = sorted(self.all_ships(), key=lambda s: s.id)
+            self._leader = sorted_ships[0]
+            self.leader_id = self._leader.id
+            self._followers = sorted_ships[1:]
+        return
+
+    # Public: Return the task_group's lead ship.
+    #
+    # Returns lead ship.
+    def leader(self):
+        if self._leader == None:
+            self._set_up_leader()
+        return self._leader
+
+    # Public: Return the task_group's followers.
+    def followers(self):
+        if self._leader == None:
+            self._set_up_leader()
+        return self._followers
+
+    # Public: Return all ships.
+    def all_ships(self):
+        return self.ships.values()
+
+    # Public: Return undocked ships.
+    def available_ships(self):
+        if self._available_ships == None:
+            self._available_ships = {}
+            for ship in self.all_ships():
+                if ship.docking_status != hlt.entity.Ship.DockingStatus.DOCKED:
+                    self._available_ships[ship.id] = ship
+            return self._available_ships.values()
+        elif len(self._available_ships) == 0:
+            return []
+        else:
+            return self._available_ships.values()
+
+    # public: Adds a ship to this task group.
     #
     # ship - Ship object
     #
@@ -49,10 +104,10 @@ class TaskGroup:
     # Returns ships.
     @classmethod
     def delete(cls, task_group):
-        for ship in task_group.ships.values():
+        for ship in task_group.all_ships():
             ship.set_task_group(None)
         del TaskGroup.task_groups[task_group.id]
-        return task_group.ships.values()
+        return task_group.all_ships()
 
     # Public: Destroys all task groups.  Mostly for testing.
     #
