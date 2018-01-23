@@ -8,12 +8,18 @@ class Navigator:
     # Public: Initialize the navigator.  This is intended to be used
     # for the whole game, so don't be creatin' them left and right.
     # Use #refresh_map(game_map) at the beginning of each turn.
-    def __init__(self, ship_radius=hlt.constants.SHIP_RADIUS):
+    def __init__(self, ship_radius=hlt.constants.SHIP_RADIUS, ship_speed=hlt.constants.MAX_SPEED):
         np.seterr(divide='ignore')
 
         self.game_map = None
         self.ship_radius = ship_radius
+        self.max_speed = ship_speed
 
+        self.init_variables()
+        return
+
+    # Private: Initialize all variables at the beginning of each turn.
+    def init_variables(self):
         # list of ship id's, corresponding to each row in ships_xy.
         self.ship_ids = []
 
@@ -22,33 +28,23 @@ class Navigator:
         self.ships_xy = []
 
         # planets_xy is a matrix of [ [x1,y2], [x2,y2], ...] for each
-        # planet.  planets_xy_trans is the transpose.
+        # planet.
         self.planets_xy = []
-        self.planets_xy_trans = [[], []]
         self.planet_radii = []
 
         # targets_xy is a matric of [ [x1,y2], [x2,y2], ...] for each
-        # target.  targets_xy_trans is the transpose.
+        # target.
         self.targets_xy = []
-        self.targets_xy_trans = [[], []]
         self.targets_radii = []
 
-        # Other caches
-        self._target_diffs = None
-        self._target_angles = None
-
-        self.init_cache_variables()
-        return
-
-    # Private: Initialize all variables at the beginning of each turn.
-    def init_cache_variables(self):
+        # Cache variables.
         self._ships_mat = None
 
         self._planets_mat = None
-        self._planets_mat_trans = None
+
+        self._planet_dist = None
 
         self._targets_mat = None
-        self._targets_mat_trans = None
 
         return
 
@@ -58,13 +54,11 @@ class Navigator:
     #
     # Returns nothing.
     def refresh_map(self, game_map):
-        self.init_cache_variables()
+        self.init_variables()
         self.game_map = game_map
         for planet in game_map.all_planets():
             self.planets_xy.append([planet.x, planet.y])
-            self.planets_xy_trans[0].append(planet.x)
-            self.planets_xy_trans[1].append(planet.y)
-            self.planet_radii.append(planet.radius + hlt.constants.SHIP_RADIUS)
+            self.planet_radii.append(planet.radius + self.ship_radius)
         return
 
     # Public: Tell the navigator to direct the following ships towards
@@ -78,20 +72,24 @@ class Navigator:
         target_xy = [ target.x, target.y ]
 
         for ship in ships:
+            self.ship_ids.append(ship.id)
             self.ships_xy.append([ ship.x, ship.y ])
             self.targets_xy.append(target_xy[:])
-            self.targets_xy_trans[0].append(target.x)
-            self.targets_xy_trans[1].append(target.y)
-            self.targets_radii.append(target.radius + hlt.constants.SHIP_RADIUS)
+            self.targets_radii.append(target.radius + self.ship_radius)
 
         return
 
     # Public: Calculate what each ship should do.
     #
-    # Returns list of [ship_id, command, vel_x, vel_y]
+    # Returns list of [ship_id, command, angle, vel]
     def navigate(self):
-        # FIXME: Implement.
-        return []
+        commands = []
+        for (ship_i, target_vector) in self.next_points():
+            (target_angle, target_dist) = target_vector
+            ship_id = self.ship_ids[ship_i]
+            speed = self.max_speed if (target_dist >= self.max_speed) else target_dist
+            commands.append([ship_id, "t", target_angle, speed])
+        return commands
 
     # Private: Return a numpy array of ships_xy
     #
@@ -109,14 +107,6 @@ class Navigator:
             self._planets_mat = np.array(self.planets_xy)
         return self._planets_mat
 
-    # Private: Return a numpy array of planets_xy_trans
-    #
-    # Returns numpy.ndarray
-    def planets_mat_trans(self):
-        if self._planets_mat_trans is None:
-            self._planets_mat_trans = np.array(self.planets_xy_trans)
-        return self._planets_mat_trans
-
     # Private: Return a numpy array of target_xy
     #
     # Returns numpy ndarray
@@ -125,14 +115,6 @@ class Navigator:
             self._targets_mat = np.array(self.targets_xy)
         return self._targets_mat
 
-    # Private: Return a numpy array of target_xy_trans
-    #
-    # Returns numpy ndarray
-    def targets_mat_trans(self):
-        if self._targets_mat_trans is None:
-            self._targets_mat_trans = np.array(self.targets_xy_trans)
-        return self._targets_mat_trans
-    
     # Public: For each ship, returns the angle to the target.
     #
     # Returns ndarray of angles for each ship.
@@ -172,12 +154,14 @@ class Navigator:
     #
     # Returns ndarray of shape (len(ships), len(planets))
     def planet_dist(self):
-        ones = np.ones((self.planets_mat().shape[0], 1))
-        planet_dist_ary  = []
-        for ship_loc in self.ships_mat():
-            ship_distances = np.linalg.norm(self.planets_mat() - (ship_loc * ones), axis=1)
-            planet_dist_ary.append( np.transpose(ship_distances) )
-        return np.array(planet_dist_ary)
+        if self._planet_dist is None:
+            ones = np.ones((self.planets_mat().shape[0], 1))
+            planet_dist_ary  = []
+            for ship_loc in self.ships_mat():
+                ship_distances = np.linalg.norm(self.planets_mat() - (ship_loc * ones), axis=1)
+                planet_dist_ary.append( np.transpose(ship_distances) )
+            self._planet_dist = np.array(planet_dist_ary)
+        return self._planet_dist
 
     # Public: Finds the next best point in between the ships and their
     # targets.

@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import Mock
 
 class TestNavigator(unittest.TestCase):
+
     def setUp(self):
         self._player        = None
         self._ship          = None
@@ -24,8 +25,8 @@ class TestNavigator(unittest.TestCase):
     def subject(self):
         if self._subject is None:
             self._subject = hlt.strategies.Navigator()
-            self._subject.direct_ships_to([ self.ship() ], self.target_planet())
             self._subject.refresh_map(self.game_map())
+            self._subject.direct_ships_to([ self.ship() ], self.target_planet())
         return self._subject
 
     def player(self):
@@ -120,25 +121,10 @@ class TestNavigator(unittest.TestCase):
                                        
         pass
 
-    def test_planets_mat_trans(self):
-        mat = self.subject().planets_mat_trans()
-        expected_mat = np.transpose(np.array([
-                    [ self.planet().x, self.planet().y ],
-                    [ self.target_planet().x, self.target_planet().y ]
-                    ]))
-        self.assertTrue(np.array_equal(mat, expected_mat))
-        pass
-
     def test_targets_mat(self):
         mat = self.subject().targets_mat()
         self.assertTrue(np.array_equal(mat,
                                        np.array([[ self.target_planet().x, self.target_planet().y ]])))
-        pass
-
-    def test_targets_mat_trans(self):
-        mat = self.subject().targets_mat_trans()
-        self.assertTrue(np.array_equal(mat,
-                                       np.transpose(np.array([[ self.target_planet().x, self.target_planet().y ]]))))
         pass
 
     def test_target_angles(self):
