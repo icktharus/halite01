@@ -171,3 +171,8 @@ class TestNavigator(unittest.TestCase):
         self.assertTrue(np.allclose(planet_dists, expected_dists))
         pass
 
+    def test_next_point(self):
+        next_points = self.subject().next_points()
+        expected_points = np.array([[ 0.991211085665582, 258.2832747198316 ]])
+        self.assertTrue(np.allclose(next_points, expected_points))
+        pass

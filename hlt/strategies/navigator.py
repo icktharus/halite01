@@ -1,4 +1,6 @@
 import hlt
+import logging
+import math
 import numpy as np
 
 class Navigator:
@@ -7,6 +9,8 @@ class Navigator:
     # for the whole game, so don't be creatin' them left and right.
     # Use #refresh_map(game_map) at the beginning of each turn.
     def __init__(self, ship_radius=hlt.constants.SHIP_RADIUS):
+        np.seterr(divide='ignore')
+
         self.game_map = None
         self.ship_radius = ship_radius
 
@@ -27,6 +31,7 @@ class Navigator:
         # target.  targets_xy_trans is the transpose.
         self.targets_xy = []
         self.targets_xy_trans = [[], []]
+        self.targets_radii = []
 
         # Other caches
         self._target_diffs = None
@@ -77,6 +82,7 @@ class Navigator:
             self.targets_xy.append(target_xy[:])
             self.targets_xy_trans[0].append(target.x)
             self.targets_xy_trans[1].append(target.y)
+            self.targets_radii.append(target.radius + hlt.constants.SHIP_RADIUS)
 
         return
 
@@ -173,11 +179,64 @@ class Navigator:
             planet_dist_ary.append( np.transpose(ship_distances) )
         return np.array(planet_dist_ary)
 
-    # Public: Finds a list of planets in between the ships and their
+    # Public: Finds the next best point in between the ships and their
     # targets.
     #
-    # Returns ndarray of [angle, dist] pairs for the first planet in
-    # the way.  pair is [0,0] if no planets in the way.
-    def intersecting_planets(self):
-        # FIXME: Implement.
-        return
+    # Returns ndarray of [angle, dist] to avoid the first planet in
+    # the way of each ship.  pair is closest point to target if no
+    # planets in the way.
+    def next_points(self):
+        retval = []
+
+        ones = np.ones((self.planets_mat().shape[0]))
+        planet_dists = self.planet_dist()
+        planet_angles, planet_angle_widths = self.planet_angles()
+
+        target_dists = self.target_dist()
+        for (ship_num, target_angle) in enumerate(self.target_angles()):
+            target_dist = target_dists[ship_num]
+            target_radius = self.targets_radii[ship_num]
+
+            angles = planet_angles[ship_num]
+            angle_widths = planet_angle_widths[ship_num]
+
+            low = angles - angle_widths
+            high = angles + angle_widths
+
+            target_angles_vec = target_angle * ones
+            within_angles = ((target_angles_vec > low) & (target_angles_vec < high))
+
+            logging.info("HIGH: %s" % str(high))
+            logging.info("TARGET: %s" % str(target_angles_vec))
+            logging.info("LOW: %s" % str(low))
+
+            dists = planet_dists[ship_num]
+            target_dist_vec = target_dist * ones
+            within_dist = dists < target_dist_vec
+
+            logging.info("WITHIN ANGLES: %s" % str(within_angles))
+            logging.info("WITHIN DIST: %s" % str(within_dist))
+
+            potentials = (within_angles & within_dist)
+            if not potentials.any():
+                logging.info("* DIRECT ROUTE")
+                retval.append([ target_angle, target_dist - target_radius ])
+                continue
+
+            potential_dists = np.ma.masked_where(np.logical_not(potentials), dists)
+            closest_i = np.argmin(potential_dists)
+            closest_dist = potential_dists[closest_i]
+            closest_angle = angles[closest_i]
+            closest_width = angle_widths[closest_i]
+            closest_radius = self.planet_radii[closest_i]
+
+            new_angle = None
+            if closest_angle > target_angle:
+                new_angle = closest_angle + closest_width
+            else:
+                new_angle = closest_angle - closest_width
+
+            new_dist = math.sqrt(closest_dist ** 2 + closest_radius ** 2)
+            retval.append([new_angle, new_dist])
+
+        return retval
