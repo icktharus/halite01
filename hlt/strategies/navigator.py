@@ -81,14 +81,26 @@ class Navigator:
 
     # Public: Calculate what each ship should do.
     #
-    # Returns list of [ship_id, command, angle, vel]
+    # Returns list of [ship_id, angle, vel]
     def navigate(self):
+        if len(self.ship_ids) == 0:
+            return []
+
         commands = []
-        for (ship_i, target_vector) in self.next_points():
+        for (ship_i, target_vector) in enumerate(self.next_points()):
+            # logging.info("--> TARGET_VECTOR: %s" % str(target_vector))
             (target_angle, target_dist) = target_vector
             ship_id = self.ship_ids[ship_i]
             speed = self.max_speed if (target_dist >= self.max_speed) else target_dist
-            commands.append([ship_id, "t", target_angle, speed])
+            commands.append([ship_id, target_angle, speed])
+        return commands
+
+    def get_commands(self):
+        commands = []
+        for ship_command in self.navigate():
+            (ship_id, angle, speed) = ship_command
+            angle_deg = math.degrees(angle)
+            commands.append("t {} {} {}".format(ship_id, int(speed), round(angle_deg)))
         return commands
 
     # Private: Return a numpy array of ships_xy
@@ -180,6 +192,7 @@ class Navigator:
         for (ship_num, target_angle) in enumerate(self.target_angles()):
             target_dist = target_dists[ship_num]
             target_radius = self.targets_radii[ship_num]
+            target_rdist = target_dist - target_radius
 
             angles = planet_angles[ship_num]
             angle_widths = planet_angle_widths[ship_num]
@@ -190,21 +203,22 @@ class Navigator:
             target_angles_vec = target_angle * ones
             within_angles = ((target_angles_vec > low) & (target_angles_vec < high))
 
-            logging.info("HIGH: %s" % str(high))
-            logging.info("TARGET: %s" % str(target_angles_vec))
-            logging.info("LOW: %s" % str(low))
+            # logging.info("HIGH: %s" % str(high))
+            # logging.info("TARGET: %s" % str(target_angles_vec))
+            # logging.info("LOW: %s" % str(low))
 
             dists = planet_dists[ship_num]
             target_dist_vec = target_dist * ones
             within_dist = dists < target_dist_vec
 
-            logging.info("WITHIN ANGLES: %s" % str(within_angles))
-            logging.info("WITHIN DIST: %s" % str(within_dist))
+            # logging.info("WITHIN ANGLES: %s" % str(within_angles))
+            # logging.info("WITHIN DIST: %s" % str(within_dist))
 
             potentials = (within_angles & within_dist)
             if not potentials.any():
-                logging.info("* DIRECT ROUTE")
-                retval.append([ target_angle, target_dist - target_radius ])
+                # logging.info("* DIRECT ROUTE %s, %s"  % (str(target_angle), str(target_rdist)))
+                retval.append([ target_angle, target_rdist ])
+                logging.info("* RETVAL: %s" % str(retval))
                 continue
 
             potential_dists = np.ma.masked_where(np.logical_not(potentials), dists)
@@ -221,6 +235,7 @@ class Navigator:
                 new_angle = closest_angle - closest_width
 
             new_dist = math.sqrt(closest_dist ** 2 + closest_radius ** 2)
+            # logging.info("* INDIRECT ROUTE")
             retval.append([new_angle, new_dist])
 
         return retval

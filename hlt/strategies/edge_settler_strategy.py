@@ -2,6 +2,7 @@ from .base_strategy import BaseStrategy
 import hlt
 import logging
 import math
+from .navigator import Navigator
 import numpy
 from .strategy_utils import *
 
@@ -38,6 +39,8 @@ class EdgeSettlerStrategy(BaseStrategy):
         self.docked_ships = {}
 
         logging.info("* %d edge planets, %d central planets" % (len(edge_planets), len(central_planets)))
+
+        self.navigator = Navigator()
 
         return
 
@@ -102,6 +105,7 @@ class EdgeSettlerStrategy(BaseStrategy):
         return task_group
 
     def get_commands(self, game_map, task_group):
+        self.navigator.refresh_map(game_map)
         command_queue = []
 
         if len(task_group.targets) == 0:
@@ -120,16 +124,10 @@ class EdgeSettlerStrategy(BaseStrategy):
                     closest = enemy
                     closest_dist = dist
 
-            point = leader.closest_point_to(closest)
-            for ship in task_group.available_ships():
-                nav = ship.navigate(
-                    point, game_map, speed=int(hlt.constants.MAX_SPEED),
-                    ignore_ships=False)
-                if nav:
-                    command_queue.append(nav)
-
+            self.navigator.direct_ships_to(task_group.available_ships(), closest)
         else:
             point = leader.closest_point_to(planet)
+            moving_ships = []
             for ship in task_group.all_ships():
                 if ship.id in self.docked_ships:
                     continue
@@ -138,11 +136,10 @@ class EdgeSettlerStrategy(BaseStrategy):
                 elif ship.can_dock(planet):
                     command_queue.append(ship.dock(planet))
                 else:
-                    navigate = ship.navigate(
-                        point, game_map, speed=int(hlt.constants.MAX_SPEED),
-                        ignore_ships=False)
-                    if navigate:
-                        command_queue.append(navigate)
+                    moving_ships.append(ship)
+            self.navigator.direct_ships_to(moving_ships, planet)
+
+        command_queue.extend(self.navigator.get_commands())
 
         return command_queue
 
